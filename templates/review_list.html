@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Review List</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .review-list {
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            width: 300px;
+            padding: 20px;
+            font-size: 24px;
+        }
+        .review-list ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        .review-list li {
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        button:active {
+            background-color: #ccc;
+        }
+    </style>
+</head>
+<body>
+
+<div class="review-list">
+    <h1>Review List</h1>
+    <ul id="reviewList">
+        {% for word in review_list %}
+        <li>
+            {{ word }}
+            <button onclick="playAudio('{{ word }}')">Play Audio</button>
+        </li>
+        {% endfor %}
+    </ul>
+    <button onclick="window.location.href='/'">Back to Flashcards</button>
+</div>
+
+<script>
+    function playAudio(word) {
+        const speech = new SpeechSynthesisUtterance(word);
+        speech.lang = 'nl-NL';
+        window.speechSynthesis.speak(speech);
+    }
+</script>
+
+</body>
+</html>

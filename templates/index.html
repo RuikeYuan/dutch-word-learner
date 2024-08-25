@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dutch Words Flashcards</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .flashcard {
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            width: 300px;
+            height: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        .word {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+        .rank {
+            font-size: 16px;
+            color: #888;
+        }
+        .buttons {
+            display: flex;
+            justify-content: space-between;
+            width: 300px;
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        button:active {
+            background-color: #ccc;
+        }
+        .level-select, .review-section {
+            margin-bottom: 20px;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+        }
+    </style>
+</head>
+<body>
+
+<div class="level-select">
+    <label for="levelSelect">Select Level:</label>
+    <select id="levelSelect">
+        <option value="1">Level 1</option>
+        <option value="2">Level 2</option>
+        <option value="3">Level 3</option>
+        <option value="4">Level 4</option>
+        <option value="5">Level 5</option>
+        <option value="6">Level 6</option>
+        <option value="7">Level 7</option>
+        <option value="8">Level 8</option>
+        <option value="9">Level 9</option>
+        <option value="10">Level 10</option>
+    </select>
+</div>
+
+<div class="flashcard" id="flashcard">
+    <div class="word" id="word">Loading...</div>
+    <div class="rank" id="rank"></div>
+    <img id="image" src="" alt="Generated Image">
+</div>
+
+<div class="buttons">
+    <button id="prevBtn">Previous</button>
+    <button id="audioBtn">Play Audio</button>
+    <button id="nextBtn">Next</button>
+    <button id="reviewBtn">Add to Review</button>
+</div>
+
+<div class="review-section">
+    <button id="viewReviewList">View Review List</button>
+</div>
+
+<script>
+    let words = [];
+    let currentIndex = 0;
+    let selectedLevel = 1;
+
+    async function fetchWords() {
+        const response = await fetch('/words');
+        words = await response.json();
+        displayWord();
+    }
+
+    async function fetchImage(word) {
+        const response = await fetch(`/generate_image/${encodeURIComponent(word)}`);
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        document.getElementById('image').src = url;
+    }
+
+    function displayWord() {
+        const levelWords = words.filter(word => word.rank === selectedLevel);
+        const wordElement = document.getElementById('word');
+        const rankElement = document.getElementById('rank');
+        const imageElement = document.getElementById('image');
+
+        if (levelWords.length > 0) {
+            const currentWord = levelWords[currentIndex].word;
+            wordElement.textContent = currentWord;
+            rankElement.textContent = `Rank: ${levelWords[currentIndex].rank}`;
+            fetchImage(currentWord);  // Fetch and display the image for the current word
+        } else {
+            wordElement.textContent = "No words available";
+            rankElement.textContent = "";
+            imageElement.src = "";  // Clear the image if no words are available
+        }
+    }
+
+    function playAudio(word) {
+        const speech = new SpeechSynthesisUtterance(word);
+        speech.lang = 'nl-NL';
+        window.speechSynthesis.speak(speech);
+    }
+
+    document.getElementById('prevBtn').addEventListener('click', () => {
+        if (currentIndex > 0) {
+            currentIndex--;
+            displayWord();
+        }
+    });
+
+    document.getElementById('nextBtn').addEventListener('click', () => {
+        const levelWords = words.filter(word => word.rank === selectedLevel);
+        if (currentIndex < levelWords.length - 1) {
+            currentIndex++;
+            displayWord();
+        }
+    });
+
+    document.getElementById('audioBtn').addEventListener('click', () => {
+        const levelWords = words.filter(word => word.rank === selectedLevel);
+        playAudio(levelWords[currentIndex].word);
+    });
+
+    document.getElementById('reviewBtn').addEventListener('click', async () => {
+        const levelWords = words.filter(word => word.rank === selectedLevel);
+        const word = levelWords[currentIndex].word;
+
+        // Send the word to the server to be added to the review list
+        await fetch('/add-to-review', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ word: word })
+        });
+
+        alert(`Word "${word}" added to review list.`);
+    });
+
+    document.getElementById('levelSelect').addEventListener('change', (event) => {
+        selectedLevel = parseInt(event.target.value, 10);
+        currentIndex = 0;  // Reset to the first word of the selected level
+        displayWord();
+    });
+
+    // Initial fetch and display
+    fetchWords();
+</script>
+
+</body>
+</html>
